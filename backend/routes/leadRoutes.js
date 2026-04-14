@@ -8,10 +8,6 @@ import {
 
 const router = express.Router();
 
-// ❌ REMOVE THIS LINE (VERY IMPORTANT)
-// router.use(protect);
-
-// ✅ PUBLIC ROUTES (no auth)
 router.route("/")
   .get(getLeads)
   .post(createLead);
