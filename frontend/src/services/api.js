@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://leadmanage-06jt.onrender.com/api"
+  baseURL: import.meta.env.VITE_API_URL,
 });
 
 export default API;
