@@ -1,16 +1,17 @@
 import express from "express";
-import protect from "../middleware/authMiddleware.js";
 import {
-  createLead,
   getLeads,
+  createLead,
   updateLead,
   deleteLead,
 } from "../controllers/leadController.js";
 
 const router = express.Router();
 
-router.use(protect);
+// ❌ REMOVE THIS LINE (VERY IMPORTANT)
+// router.use(protect);
 
+// ✅ PUBLIC ROUTES (no auth)
 router.route("/")
   .get(getLeads)
   .post(createLead);
