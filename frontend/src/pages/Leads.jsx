@@ -18,8 +18,12 @@ const Leads = () => {
   const navigate = useNavigate();
 
   const fetchLeads = async () => {
-    const { data } = await API.get("/leads");
-    setLeads(data);
+    try {
+      const { data } = await API.get("/leads");
+      setLeads(data);
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   useEffect(() => {
@@ -52,22 +56,48 @@ const Leads = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // ✅ FIXED SUBMIT
   const handleSubmit = async () => {
-    if (editId) {
-      await API.put(`/leads/${editId}`, form);
-    } else {
-      await API.post("/leads", form);
-    }
+    try {
+      console.log("Clicked Save", form);
 
-    setShowModal(false);
-    setEditId(null);
-    setForm({ name: "", email: "", phone: "", status: "New" });
-    fetchLeads();
+      if (!form.name || !form.email) {
+        alert("Please fill required fields");
+        return;
+      }
+
+      if (editId) {
+        await API.put(`/leads/${editId}`, form);
+      } else {
+        await API.post("/leads", form);
+      }
+
+      alert("Lead saved successfully ✅");
+
+      setShowModal(false);
+      setEditId(null);
+      setForm({
+        name: "",
+        email: "",
+        phone: "",
+        status: "New",
+      });
+
+      fetchLeads();
+
+    } catch (error) {
+      console.error(error);
+      alert("Error saving lead ❌");
+    }
   };
 
   const handleDelete = async (id) => {
-    await API.delete(`/leads/${id}`);
-    fetchLeads();
+    try {
+      await API.delete(`/leads/${id}`);
+      fetchLeads();
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const handleEdit = (lead) => {
@@ -104,19 +134,18 @@ const Leads = () => {
       {/* MAIN */}
       <div className="flex-1">
 
-        {/* TOP */}
         <div className="flex justify-between items-center bg-white px-10 py-6 shadow">
           <h1 className="text-3xl font-semibold">Leads</h1>
         </div>
 
         <div className="p-10 space-y-8">
 
-          {/* SEARCH + BUTTONS */}
+          {/* SEARCH */}
           <div className="flex justify-between items-center">
 
             <input
               placeholder="Search leads..."
-              className="border px-5 py-4 rounded-xl w-1/3 text-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="border px-5 py-4 rounded-xl w-1/3 text-lg"
               onChange={(e) => setSearch(e.target.value)}
             />
 
@@ -124,7 +153,7 @@ const Leads = () => {
 
               <button
                 onClick={exportToCSV}
-                className="border px-6 py-3 rounded-xl text-base hover:bg-gray-100"
+                className="border px-6 py-3 rounded-xl"
               >
                 ⬇ Export
               </button>
@@ -135,7 +164,7 @@ const Leads = () => {
                   setEditId(null);
                   setForm({ name: "", email: "", phone: "", status: "New" });
                 }}
-                className="bg-blue-600 text-white px-6 py-3 rounded-xl shadow hover:bg-blue-700 text-base"
+                className="bg-blue-600 text-white px-6 py-3 rounded-xl"
               >
                 + Add Lead
               </button>
@@ -145,58 +174,38 @@ const Leads = () => {
 
           {/* TABLE */}
           <div className="bg-white rounded-3xl shadow-lg p-8">
-
             <table className="w-full">
-
               <thead>
-                <tr className="text-gray-500 text-base border-b">
+                <tr className="text-gray-500 border-b">
                   <th className="py-5 text-left">Name</th>
-                  <th className="py-5 text-left">Email</th>
-                  <th className="py-5 text-left">Phone</th>
-                  <th className="py-5 text-left">Status</th>
-                  <th className="py-5 text-left">Actions</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
 
               <tbody>
-
                 {filtered.map((lead) => (
-                  <tr key={lead._id} className="border-b hover:bg-gray-50 transition">
+                  <tr key={lead._id} className="border-b">
 
-                    <td className="py-6 text-lg font-semibold">
-                      {lead.name || "-"}
-                    </td>
+                    <td className="py-6 font-semibold">{lead.name}</td>
+                    <td>{lead.email}</td>
+                    <td>{lead.phone}</td>
 
-                    <td className="py-6 text-gray-600 text-base">
-                      {lead.email}
-                    </td>
-
-                    <td className="py-6 text-gray-600 text-base">
-                      {lead.phone || "-"}
-                    </td>
-
-                    <td className="py-6">
-                      <span className={`px-4 py-1 rounded-full text-sm font-medium ${
-                        lead.status === "New"
-                          ? "bg-blue-100 text-blue-600"
-                          : lead.status === "Contacted"
-                          ? "bg-yellow-100 text-yellow-600"
-                          : "bg-green-100 text-green-600"
-                      }`}>
+                    <td>
+                      <span className="px-3 py-1 bg-blue-100 rounded">
                         {lead.status}
                       </span>
                     </td>
 
-                    <td className="py-6">
-                      <div className="flex gap-5 text-xl">
-                        <button onClick={() => handleEdit(lead)}>✏️</button>
-                        <button onClick={() => handleDelete(lead._id)} className="text-red-500">🗑️</button>
-                      </div>
+                    <td>
+                      <button onClick={() => handleEdit(lead)}>✏️</button>
+                      <button onClick={() => handleDelete(lead._id)}>🗑️</button>
                     </td>
 
                   </tr>
                 ))}
-
               </tbody>
             </table>
           </div>
@@ -205,37 +214,34 @@ const Leads = () => {
 
       {/* MODAL */}
       {showModal && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center"
-          onClick={() => setShowModal(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white p-8 rounded-2xl w-[420px] shadow-lg animate-scale"
-          >
-            <h2 className="text-xl font-semibold mb-5">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+          <div className="bg-white p-8 rounded-xl w-[420px]">
+
+            <h2 className="text-xl mb-5">
               {editId ? "Edit Lead" : "Add Lead"}
             </h2>
 
-            <input name="name" placeholder="Name" value={form.name} onChange={handleChange} className="w-full border p-3 mb-3 rounded-lg" />
-            <input name="email" placeholder="Email" value={form.email} onChange={handleChange} className="w-full border p-3 mb-3 rounded-lg" />
-            <input name="phone" placeholder="Phone" value={form.phone} onChange={handleChange} className="w-full border p-3 mb-3 rounded-lg" />
+            <input name="name" value={form.name} onChange={handleChange} placeholder="Name" className="w-full p-3 mb-3 border" />
+            <input name="email" value={form.email} onChange={handleChange} placeholder="Email" className="w-full p-3 mb-3 border" />
+            <input name="phone" value={form.phone} onChange={handleChange} placeholder="Phone" className="w-full p-3 mb-3 border" />
 
-            <select name="status" value={form.status} onChange={handleChange} className="w-full border p-3 mb-5 rounded-lg">
+            <select name="status" value={form.status} onChange={handleChange} className="w-full p-3 mb-5 border">
               <option>New</option>
               <option>Contacted</option>
               <option>Closed</option>
             </select>
 
             <div className="flex justify-end gap-3">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 bg-gray-300 rounded-lg">
-                Cancel
-              </button>
+              <button onClick={() => setShowModal(false)}>Cancel</button>
 
-              <button onClick={handleSubmit} className="px-4 py-2 bg-blue-600 text-white rounded-lg">
+              <button
+                onClick={handleSubmit}
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+              >
                 {editId ? "Update" : "Save"}
               </button>
             </div>
+
           </div>
         </div>
       )}
